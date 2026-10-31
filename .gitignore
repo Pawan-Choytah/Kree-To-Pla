@@ -1,0 +1,20 @@
+# Secrets and environment-specific configuration
+.env
+.env.*
+!.env.example
+config/local.php
+
+# Runtime files and logs
+/storage/*
+!/storage/.gitkeep
+*.log
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Test/build artefacts
+.phpunit.cache/
+/vendor/
