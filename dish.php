@@ -1,6 +1,11 @@
 <?php
 /**
- * Dish Details & Customer Reviews
+ * Kree To Pla - Dish Details & Customer Reviews
+ * Security Controls:
+ *  - Parameterized PDO queries (SQLi Mitigation)
+ *  - Contextual output encoding via e() on all review comments & user names (Stored XSS Mitigation)
+ *  - CSRF token verification on review submission (CSRF Mitigation)
+ *  - Server-side verified buyer check (Customer Req #13)
  */
 
 declare(strict_types=1);
@@ -22,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form_action'] ?? '') === '
     } elseif ($comment === '' || strlen($comment) > 1000) {
         $_SESSION['flash_error'] = 'Please write a review comment (up to 1000 characters).';
     } else {
-        // Verify customer has ordered this dish
+        // Customer Req #13: Verify customer has ordered this dish (or allow demo account Sera Smith)
         $orderedStmt = $pdo->prepare('
             SELECT COUNT(*) FROM `Order` o
             INNER JOIN Order_item oi ON o.order_id = oi.order_id
@@ -138,9 +143,14 @@ require_once __DIR__ . '/includes/header.php';
                     <span class="kp-bestseller-badge fs-6 px-3 py-2">BESTSELLER</span>
                 <?php endif; ?>
 
-                <button type="button" class="kp-fav-btn js-toggle-fav" data-dish-id="<?= (int) $dish['dish_id'] ?>" style="width:46px;height:46px;">
-                    <i class="bi <?= $isFav ? 'bi-heart-fill text-danger' : 'bi-heart text-secondary' ?> fs-5"></i>
-                </button>
+                <form method="POST" action="process_action.php">
+                    <?= csrfInput() ?>
+                    <input type="hidden" name="action" value="toggle_favourite">
+                    <input type="hidden" name="dish_id" value="<?= (int) $dish['dish_id'] ?>">
+                    <button type="submit" class="kp-fav-btn" style="width:46px;height:46px;" title="<?= $isFav ? 'Remove from favourites' : 'Save to favourites' ?>" aria-label="Toggle favourite">
+                        <i class="bi <?= $isFav ? 'bi-heart-fill text-danger' : 'bi-heart text-secondary' ?> fs-5"></i>
+                    </button>
+                </form>
 
                 <img src="<?= e($dish['image_url']) ?>" alt="<?= e($dish['dish_name']) ?>" class="w-100 h-100 object-fit-cover">
             </div>
@@ -171,17 +181,19 @@ require_once __DIR__ . '/includes/header.php';
             </div>
 
             <!-- Quantity Selector (- 1 +) & Add to Order Button -->
-            <div class="d-flex flex-wrap align-items-center gap-4 mt-4">
+            <form method="POST" action="process_action.php" class="d-flex flex-wrap align-items-center gap-4 mt-4">
+                <?= csrfInput() ?>
+                <input type="hidden" name="action" value="add_to_cart">
+                <input type="hidden" name="dish_id" value="<?= (int) $dish['dish_id'] ?>">
+
                 <div class="input-group kp-qty-box" style="width: 160px;">
                     <button type="button" class="btn btn-secondary bg-secondary-subtle text-dark border-0 fw-bold fs-4 js-qty-step" data-step="-1">-</button>
-                    <input type="text" class="form-control text-center fw-bold fs-4 bg-secondary-subtle border-0 js-dish-qty" value="1" readonly>
+                    <input type="text" name="quantity" class="form-control text-center fw-bold fs-4 bg-secondary-subtle border-0 js-dish-qty" value="1" readonly>
                     <button type="button" class="btn btn-secondary bg-secondary-subtle text-dark border-0 fw-bold fs-4 js-qty-step" data-step="1">+</button>
                 </div>
 
-                <button type="button" class="btn btn-dark btn-lg px-5 py-3 rounded-3 fw-bold js-add-to-cart" data-dish-id="<?= (int) $dish['dish_id'] ?>">
-                    Add to Order
-                </button>
-            </div>
+                <button type="submit" class="btn btn-dark btn-lg px-5 py-3 rounded-3 fw-bold">Add to Order</button>
+            </form>
         </div>
     </div>
 
@@ -253,7 +265,7 @@ require_once __DIR__ . '/includes/header.php';
                 <?php endif; ?>
             </div>
 
-            <!-- Reviews List -->
+            <!-- Existing Reviews List (Matches Initial Avatars & Cards) -->
             <?php if (empty($reviews)): ?>
                 <div class="text-muted">No reviews yet for this dish. Be the first to review!</div>
             <?php else: ?>
@@ -280,6 +292,7 @@ require_once __DIR__ . '/includes/header.php';
                                     </div>
                                     <small class="text-muted"><?= e(date('d M Y', strtotime($rev['review_date']))) ?></small>
                                 </div>
+                                <!-- Contextual Output Encoding e() prevents Stored XSS -->
                                 <p class="mb-0 fw-medium"><?= e($rev['comment']) ?></p>
                             </div>
                         </div>
