@@ -1,6 +1,7 @@
 <?php
 /**
- * My Favourites Page
+ * Kree To Pla - My Favourites Page
+ * Supports viewing & removing both standard dishes and personalised dishes (Customer Req #10-12).
  */
 
 declare(strict_types=1);
@@ -37,7 +38,7 @@ $stmt = $pdo->prepare('
 $stmt->execute([':cid' => $userId]);
 $favDishes = $stmt->fetchAll();
 
-// Fetch saved personalised dishes
+// Fetch saved personalised dishes (Customer Req #10)
 $cStmt = $pdo->prepare('
     SELECT custom_dish_id, dish_name, instructions, total_price
     FROM Custom_dish
@@ -76,9 +77,14 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="col js-fav-card-col">
                     <div class="kp-dish-card h-100 d-flex flex-column">
                         <div class="kp-dish-img-wrap">
-                            <button type="button" class="kp-fav-btn js-toggle-fav" data-dish-id="<?= $id ?>" data-remove-card="true">
-                                <i class="bi bi-heart-fill text-danger"></i>
-                            </button>
+                            <form method="POST" action="process_action.php">
+                                <?= csrfInput() ?>
+                                <input type="hidden" name="action" value="toggle_favourite">
+                                <input type="hidden" name="dish_id" value="<?= $id ?>">
+                                <button type="submit" class="kp-fav-btn" title="Remove from Favourites" aria-label="Remove from favourites">
+                                    <i class="bi bi-heart-fill text-danger"></i>
+                                </button>
+                            </form>
                             <a href="dish.php?id=<?= $id ?>">
                                 <img src="<?= e($dish['image_url']) ?>" alt="<?= e($dish['dish_name']) ?>">
                             </a>
@@ -89,12 +95,22 @@ require_once __DIR__ . '/includes/header.php';
                                 <p class="small text-secondary mb-3">Rs <?= number_format((float) $dish['display_price'], 0) ?></p>
                             </div>
                             <div class="text-center">
-                                <button type="button" class="btn btn-dark btn-sm w-75 py-2 mb-2 js-add-to-cart" data-dish-id="<?= $id ?>">
-                                    Add to Order
-                                </button>
+                                <form method="POST" action="process_action.php">
+                                    <?= csrfInput() ?>
+                                    <input type="hidden" name="action" value="add_to_cart">
+                                    <input type="hidden" name="dish_id" value="<?= $id ?>">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-dark btn-sm w-75 py-2 mb-2">
+                                        Add to Order
+                                    </button>
+                                </form>
                                 <div>
-                                    <a href="#" class="small text-secondary text-decoration-underline js-toggle-fav"
-                                       data-dish-id="<?= $id ?>" data-remove-card="true">Remove</a>
+                                    <form method="POST" action="process_action.php" class="d-inline">
+                                        <?= csrfInput() ?>
+                                        <input type="hidden" name="action" value="toggle_favourite">
+                                        <input type="hidden" name="dish_id" value="<?= $id ?>">
+                                        <button type="submit" class="btn btn-link p-0 small text-secondary text-decoration-underline">Remove</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
