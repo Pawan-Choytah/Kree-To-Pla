@@ -6,7 +6,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/includes/security.php';
 
-// Fetch available ingredients grouped by category
+
 $stmt = $pdo->query('SELECT * FROM Ingredient WHERE is_available = TRUE ORDER BY category, ingredient_id ASC');
 $grouped = ['Base' => [], 'Protein' => [], 'Vegetable' => [], 'Sauce' => []];
 foreach ($stmt->fetchAll() as $ing) {
@@ -18,7 +18,7 @@ foreach ($stmt->fetchAll() as $ing) {
     }
 }
 
-// Handle Custom Dish Submission
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireLogin('auth.php');
     requireValidCsrf();
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($selectedIds)) {
         $_SESSION['flash_error'] = 'Please select at least one base or ingredient for your custom dish.';
     } else {
-        // Fetch verified prices from database (Never trust frontend price!)
+       
         $placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
         $priceStmt = $pdo->prepare("SELECT ingredient_id, ingredient_name, category, price FROM Ingredient WHERE ingredient_id IN ($placeholders) AND is_available = TRUE");
         $priceStmt->execute($selectedIds);
@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userId = (int) $_SESSION['user_id'];
             $pdo->beginTransaction();
             try {
-                // Ensure Customer record exists
+                
                 $pdo->prepare('INSERT IGNORE INTO Customer (user_id, address) VALUES (:uid, "Cafeteria Pickup")')
                     ->execute([':uid' => $userId]);
 
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $pdo->commit();
 
-                // Add Custom Dish to Session Cart
+               
                 if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
                     $_SESSION['cart'] = [];
                 }
@@ -125,9 +125,9 @@ require_once __DIR__ . '/includes/header.php';
         <?= csrfInput() ?>
 
         <div class="row g-5 align-items-start">
-            <!-- Left 4-Step Builder Column -->
+            
             <div class="col-lg-8">
-                <!-- Step 1: Choose a base -->
+                
                 <h3 class="fw-extrabold mb-3">1. Choose a base</h3>
                 <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
                     <?php foreach ($grouped['Base'] as $idx => $ing): ?>
@@ -145,7 +145,7 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Step 2: Choose a protein -->
+                
                 <h3 class="fw-extrabold mb-3">2. Choose a protein</h3>
                 <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
                     <?php foreach ($grouped['Protein'] as $idx => $ing): ?>
@@ -163,7 +163,7 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Step 3: Add ingredients -->
+                
                 <h3 class="fw-extrabold mb-3">3. Add ingredients</h3>
                 <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
                     <?php foreach ($grouped['Vegetable'] as $idx => $ing): ?>
@@ -181,7 +181,7 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Step 4: Sauce type -->
+                
                 <h3 class="fw-extrabold mb-3">4. Sauce type</h3>
                 <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
                     <?php foreach ($grouped['Sauce'] as $idx => $ing): ?>
@@ -199,7 +199,7 @@ require_once __DIR__ . '/includes/header.php';
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Special Instructions / Allergies (Desktop-6.png) -->
+                
                 <h5 class="fw-bold mb-2">5. Any special Instructions/Allergies (Optional)</h5>
                 <input type="text" name="instructions" class="form-control form-control-lg bg-secondary-subtle border-0 mb-3"
                        placeholder="E.g Less spicy, no onions, extra sauce">
@@ -220,7 +220,7 @@ require_once __DIR__ . '/includes/header.php';
                 </div>
             </div>
 
-            <!-- Right Sticky Summary Panel: "Your Dish" -->
+            
             <div class="col-lg-4">
                 <div class="kp-summary-panel sticky-top" style="top: 100px; z-index: 10;">
                     <h4 class="fw-extrabold text-center mb-4">Your Dish</h4>

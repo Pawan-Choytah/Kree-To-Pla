@@ -6,11 +6,9 @@
 declare(strict_types=1);
 require_once __DIR__ . '/includes/security.php';
 
-// Fetch all available ingredients for the 4-column checkbox grid
 $ingStmt = $pdo->query('SELECT ingredient_id, ingredient_name, category, allergy_info FROM Ingredient WHERE is_available = TRUE ORDER BY ingredient_id ASC');
 $allIngredients = $ingStmt->fetchAll();
 
-// Read selected ingredient IDs or text search query
 $selectedIds = isset($_GET['ingredients']) && is_array($_GET['ingredients'])
     ? array_values(array_filter(array_map('intval', $_GET['ingredients']), fn($id) => $id > 0))
     : [];
@@ -23,7 +21,7 @@ if (isLoggedIn()) {
     $favIds = array_map('intval', array_column($fStmt->fetchAll(), 'dish_id'));
 }
 
-// Execute parameterized search query when ingredients or text search are provided
+
 $results          = [];
 $selectedNames    = [];
 $hasSearched      = !empty($selectedIds) || $searchQuery !== '';
@@ -73,11 +71,11 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container py-5">
-    <!-- Ingredient Selector Form -->
+    
     <form method="GET" action="find_food.php" class="mb-5">
         <h2 class="fw-extrabold mb-3">Find dishes with your ingredients</h2>
 
-        <!-- Search Bar with Magnifying Glass Icon -->
+        
         <div class="input-group input-group-lg mb-4 bg-light rounded-3 border">
             <input type="text" id="js-ingredient-filter-input" name="q"
                    class="form-control bg-transparent border-0"
@@ -90,7 +88,7 @@ require_once __DIR__ . '/includes/header.php';
 
         <h4 class="fw-bold mb-3">Select your ingredients</h4>
 
-        <!-- 4-Column Ingredient Checkbox Grid -->
+        
         <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
             <?php foreach ($allIngredients as $ing):
                 $id      = (int) $ing['ingredient_id'];
@@ -114,7 +112,7 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </form>
 
-    <!-- Filtered Results Grid -->
+    
     <?php if ($hasSearched): ?>
         <hr class="my-5">
         <div class="mb-4">
@@ -138,9 +136,14 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="col">
                         <div class="kp-dish-card h-100 d-flex flex-column">
                             <div class="kp-dish-img-wrap">
-                                <button type="button" class="kp-fav-btn js-toggle-fav" data-dish-id="<?= $id ?>">
-                                    <i class="bi <?= $isFav ? 'bi-heart-fill text-danger' : 'bi-heart text-secondary' ?>"></i>
-                                </button>
+                                <form method="POST" action="process_action.php">
+                                    <?= csrfInput() ?>
+                                    <input type="hidden" name="action" value="toggle_favourite">
+                                    <input type="hidden" name="dish_id" value="<?= $id ?>">
+                                    <button type="submit" class="kp-fav-btn" title="Save to Favourites" aria-label="Toggle favourite">
+                                        <i class="bi <?= $isFav ? 'bi-heart-fill text-danger' : 'bi-heart text-secondary' ?>"></i>
+                                    </button>
+                                </form>
                                 <a href="dish.php?id=<?= $id ?>">
                                     <img src="<?= e($dish['image_url']) ?>" alt="<?= e($dish['dish_name']) ?>">
                                 </a>
@@ -152,9 +155,15 @@ require_once __DIR__ . '/includes/header.php';
                                     </a>
                                     <p class="fw-bold small mb-3">Rs <?= number_format((float) $dish['display_price'], 0) ?></p>
                                 </div>
-                                <button type="button" class="btn btn-outline-dark w-100 fw-bold js-add-to-cart" data-dish-id="<?= $id ?>">
-                                    Add
-                                </button>
+                                <form method="POST" action="process_action.php">
+                                    <?= csrfInput() ?>
+                                    <input type="hidden" name="action" value="add_to_cart">
+                                    <input type="hidden" name="dish_id" value="<?= $id ?>">
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn btn-outline-dark w-100 fw-bold">
+                                        Add
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
